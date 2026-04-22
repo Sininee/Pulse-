@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'app_theme.dart';
 
@@ -7,7 +8,7 @@ enum LibrarySection {
   playlists,
 }
 
-class TracksOnlySidebar extends StatelessWidget {
+class TracksOnlySidebar extends StatefulWidget {
   const TracksOnlySidebar({
     super.key,
     required this.onClose,
@@ -21,7 +22,28 @@ class TracksOnlySidebar extends StatelessWidget {
   final LibrarySection selectedSection;
   final ValueChanged<LibrarySection> onSelectSection;
 
-  static const String appVersion = 'V04222026';
+  @override
+  State<TracksOnlySidebar> createState() => _TracksOnlySidebarState();
+}
+
+class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+
+    if (!mounted) return;
+
+    setState(() {
+      _appVersion = info.version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +74,7 @@ class TracksOnlySidebar extends StatelessWidget {
                         ),
                         const Spacer(),
                         IconButton(
-                          onPressed: onClose,
+                          onPressed: widget.onClose,
                           icon: const Icon(Icons.close),
                         ),
                       ],
@@ -61,31 +83,32 @@ class TracksOnlySidebar extends StatelessWidget {
                     _SidebarItem(
                       icon: Icons.music_note_outlined,
                       label: 'Tracks',
-                      selected: selectedSection == LibrarySection.tracks,
-                      onTap: () => onSelectSection(LibrarySection.tracks),
+                      selected: widget.selectedSection == LibrarySection.tracks,
+                      onTap: () => widget.onSelectSection(LibrarySection.tracks),
                     ),
                     const SizedBox(height: 10),
                     _SidebarItem(
                       icon: Icons.queue_music_rounded,
                       label: 'Playlists',
-                      selected: selectedSection == LibrarySection.playlists,
-                      onTap: () => onSelectSection(LibrarySection.playlists),
+                      selected: widget.selectedSection == LibrarySection.playlists,
+                      onTap: () => widget.onSelectSection(LibrarySection.playlists),
                     ),
                     const Spacer(),
-                    Text(
-                      'Pulse $appVersion',
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 13,
+                    if (_appVersion.isNotEmpty)
+                      Text(
+                        'Pulse $_appVersion',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 10),
                     const Divider(),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.logout),
                       title: const Text('Logout'),
-                      onTap: onLogout,
+                      onTap: widget.onLogout,
                     ),
                   ],
                 ),
@@ -93,7 +116,7 @@ class TracksOnlySidebar extends StatelessWidget {
             ),
             Expanded(
               child: GestureDetector(
-                onTap: onClose,
+                onTap: widget.onClose,
                 child: Container(color: Colors.transparent),
               ),
             ),

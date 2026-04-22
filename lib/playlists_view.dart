@@ -14,6 +14,7 @@ class PlaylistsView extends StatelessWidget {
     required this.selectedPlaylist,
     required this.playlistSongsFuture,
     required this.currentSong,
+    required this.searchText,
     required this.onSelectPlaylist,
     required this.onBackToPlaylists,
     required this.onPlayPlaylist,
@@ -25,6 +26,7 @@ class PlaylistsView extends StatelessWidget {
   final PlaylistSummary? selectedPlaylist;
   final Future<List<Song>>? playlistSongsFuture;
   final Song? currentSong;
+  final String searchText;
   final ValueChanged<PlaylistSummary> onSelectPlaylist;
   final VoidCallback onBackToPlaylists;
   final ValueChanged<List<Song>> onPlayPlaylist;
@@ -173,7 +175,15 @@ class PlaylistsView extends StatelessWidget {
           );
         }
 
-        final songs = snapshot.data ?? [];
+        final allSongs = snapshot.data ?? [];
+        final query = searchText.trim().toLowerCase();
+
+        final visibleSongs = query.isEmpty
+            ? allSongs
+            : allSongs.where((song) {
+                return song.title.toLowerCase().contains(query) ||
+                    song.artist.toLowerCase().contains(query);
+              }).toList();
 
         return Container(
           decoration: BoxDecoration(
@@ -205,7 +215,7 @@ class PlaylistsView extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     FilledButton.icon(
-                      onPressed: songs.isEmpty ? null : () => onPlayPlaylist(songs),
+                      onPressed: visibleSongs.isEmpty ? null : () => onPlayPlaylist(visibleSongs),
                       icon: const Icon(Icons.play_arrow_rounded),
                       label: const Text('Play'),
                     ),
@@ -217,7 +227,9 @@ class PlaylistsView extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${songs.length} songs',
+                    query.isEmpty
+                        ? '${allSongs.length} songs'
+                        : '${visibleSongs.length} of ${allSongs.length} songs',
                     style: const TextStyle(color: AppColors.textMuted),
                   ),
                 ),
@@ -248,96 +260,103 @@ class PlaylistsView extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: ListView.separated(
-                  itemCount: songs.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final song = songs[index];
-                    final isCurrent = currentSong?.id == song.id;
+                child: visibleSongs.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No songs match your search.',
+                          style: TextStyle(color: AppColors.textMuted),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: visibleSongs.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final song = visibleSongs[index];
+                          final isCurrent = currentSong?.id == song.id;
 
-                    return InkWell(
-                      onTap: () => onPlaySong(song),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        color: isCurrent ? Colors.white.withAlpha(8) : Colors.transparent,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 36,
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  color: isCurrent ? AppColors.accent : AppColors.textMuted,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 8,
+                          return InkWell(
+                            onTap: () => onPlaySong(song),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              color: isCurrent ? Colors.white.withAlpha(8) : Colors.transparent,
                               child: Row(
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: song.coverArtId.isEmpty
-                                        ? Container(
-                                            width: 44,
-                                            height: 44,
-                                            color: AppColors.panel,
-                                            child: const Icon(Icons.music_note, size: 18),
-                                          )
-                                        : CachedNetworkImage(
-                                            imageUrl: api.coverArtUrl(song.coverArtId),
-                                            width: 44,
-                                            height: 44,
-                                            fit: BoxFit.cover,
-                                            errorWidget: (context, url, error) => Container(
-                                              width: 44,
-                                              height: 44,
-                                              color: AppColors.panel,
-                                              child: const Icon(Icons.music_note, size: 18),
-                                            ),
-                                          ),
+                                  SizedBox(
+                                    width: 36,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: TextStyle(
+                                        color: isCurrent ? AppColors.accent : AppColors.textMuted,
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    flex: 8,
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          song.title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: isCurrent ? Colors.white : null,
-                                          ),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: song.coverArtId.isEmpty
+                                              ? Container(
+                                                  width: 44,
+                                                  height: 44,
+                                                  color: AppColors.panel,
+                                                  child: const Icon(Icons.music_note, size: 18),
+                                                )
+                                              : CachedNetworkImage(
+                                                  imageUrl: api.coverArtUrl(song.coverArtId),
+                                                  width: 44,
+                                                  height: 44,
+                                                  fit: BoxFit.cover,
+                                                  errorWidget: (context, url, error) => Container(
+                                                    width: 44,
+                                                    height: 44,
+                                                    color: AppColors.panel,
+                                                    child: const Icon(Icons.music_note, size: 18),
+                                                  ),
+                                                ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          song.artist,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(color: AppColors.textMuted),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                song.title,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: isCurrent ? Colors.white : null,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                song.artist,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(color: AppColors.textMuted),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 80,
+                                    child: Text(
+                                      song.durationText,
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(color: AppColors.textMuted),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            SizedBox(
-                              width: 80,
-                              child: Text(
-                                song.durationText,
-                                textAlign: TextAlign.right,
-                                style: const TextStyle(color: AppColors.textMuted),
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),

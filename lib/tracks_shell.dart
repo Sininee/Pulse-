@@ -146,6 +146,7 @@ class _TracksShellState extends State<TracksShell> {
     setState(() {
       _selectedPlaylist = playlist;
       _selectedPlaylistSongsFuture = widget.api.getPlaylistSongs(playlist.id);
+      _searchText = '';
     });
   }
 
@@ -153,6 +154,7 @@ class _TracksShellState extends State<TracksShell> {
     setState(() {
       _selectedPlaylist = null;
       _selectedPlaylistSongsFuture = null;
+      _searchText = '';
     });
   }
 
@@ -273,12 +275,15 @@ class _TracksShellState extends State<TracksShell> {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
 
-        final playlists = _visiblePlaylists(snapshot.data ?? []);
+        final playlists = _selectedPlaylist == null
+            ? _visiblePlaylists(snapshot.data ?? [])
+            : (snapshot.data ?? []);
 
         if (_selectedPlaylist != null &&
-            !playlists.any((p) => p.id == _selectedPlaylist!.id)) {
+            !(snapshot.data ?? []).any((p) => p.id == _selectedPlaylist!.id)) {
           _selectedPlaylist = null;
           _selectedPlaylistSongsFuture = null;
+          _searchText = '';
         }
 
         return Padding(
@@ -299,12 +304,16 @@ class _TracksShellState extends State<TracksShell> {
                     color: AppColors.accent,
                   ),
                   const SizedBox(width: 14),
-                  Text(
-                    _selectedPlaylist == null ? 'Playlists' : _selectedPlaylist!.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                  Expanded(
+                    child: Text(
+                      _selectedPlaylist == null ? 'Playlists' : _selectedPlaylist!.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   if (_selectedPlaylist == null)
@@ -334,13 +343,25 @@ class _TracksShellState extends State<TracksShell> {
                   selectedPlaylist: _selectedPlaylist,
                   playlistSongsFuture: _selectedPlaylistSongsFuture,
                   currentSong: _currentSong,
+                  searchText: _searchText,
                   onSelectPlaylist: _selectPlaylist,
                   onBackToPlaylists: _backToPlaylistList,
                   onPlayPlaylist: _playPlaylistSongs,
                   onPlaySong: (song) async {
                     if (_selectedPlaylistSongsFuture == null) return;
-                    final songs = await _selectedPlaylistSongsFuture!;
-                    await _playSongFromList(songs, song);
+                    final allSongs = await _selectedPlaylistSongsFuture!;
+                    final query = _searchText.trim().toLowerCase();
+                    final visibleSongs = query.isEmpty
+                        ? allSongs
+                        : allSongs.where((s) {
+                            return s.title.toLowerCase().contains(query) ||
+                                s.artist.toLowerCase().contains(query);
+                          }).toList();
+
+                    await _playSongFromList(
+                      visibleSongs.isNotEmpty ? visibleSongs : allSongs,
+                      song,
+                    );
                   },
                 ),
               ),
@@ -357,7 +378,7 @@ class _TracksShellState extends State<TracksShell> {
         ? 'Search tracks or artists...'
         : _selectedPlaylist == null
             ? 'Search playlists...'
-            : 'Search playlists...';
+            : 'Search songs in playlist...';
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
