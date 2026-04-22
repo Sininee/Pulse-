@@ -1,16 +1,36 @@
-# android_music_app
+# Pulse 🎵
 
-A new Flutter project.
+Pulse is a sleek Android music streaming app designed for smooth playback, beautiful UI, and easy access to your favorite tracks. Built with **Vibecoding** for a fast, creative, and modern development workflow. This app uses a home Navidrome server to get the songs.
 
-## Getting Started
+## ✨ Features
 
-This project is a starting point for a Flutter application.
+* 🎶 Stream and play music seamlessly
+* 🔍 Search for songs and artists
+* ⏯ Background playback support
+* 📱 Clean and modern Android UI
 
-A few resources to get you started if this is your first Flutter project:
+## 📸 Screenshots
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+*Add screenshots here*
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📥 Download APK
+
+You can download the latest APK here:
+
+[Download Latest Release](https://github.com/Sininee/Pulse-/releases/tag/APK)
+
+## 🚀 Installation
+
+1. Download the APK from the Releases page.
+2. Enable **Install from Unknown Sources** on your Android device.
+3. Open the APK and install.
+4. Log into your Navidrome server.
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to fork this repo and submit a pull request.
+
+## 📄 License
+
+This project is licensed under the GPL-3.0 License.
+
