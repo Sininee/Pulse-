@@ -11,7 +11,11 @@ Pulse is a sleek Android music streaming app designed for smooth playback, beaut
 
 ## 📸 Screenshots
 
-*Add screenshots here*
+<p align="center">
+  <img src="screenshots/1.png" width="250"/>
+  <img src="screenshots/2.png" width="250"/>
+  <img src="screenshots/3.png" width="250"/>
+</p>
 
 ## 📥 Download APK
 
