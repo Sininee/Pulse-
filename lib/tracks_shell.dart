@@ -405,17 +405,38 @@ class _TracksShellState extends State<TracksShell> {
                   repeatEnabled: _repeatEnabled,
                   onToggleShuffle: () async {
                     final newValue = !_shuffleEnabled;
+
                     await _handler.setShuffleEnabled(newValue);
+
                     if (!mounted) return;
+
+                    if (newValue) {
+                      _handler.setRepeatEnabled(false);
+                    }
+
                     setState(() {
                       _shuffleEnabled = newValue;
+                      if (newValue) {
+                        _repeatEnabled = false;
+                      }
                     });
                   },
-                  onToggleRepeat: () {
+                  onToggleRepeat: () async {
                     final newValue = !_repeatEnabled;
+
                     _handler.setRepeatEnabled(newValue);
+
+                    if (newValue) {
+                      await _handler.setShuffleEnabled(false);
+                    }
+
+                    if (!mounted) return;
+
                     setState(() {
                       _repeatEnabled = newValue;
+                      if (newValue) {
+                        _shuffleEnabled = false;
+                      }
                     });
                   },
                   onPrevious: () => _handler.skipToPrevious(),
