@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_language.dart';
 import 'app_theme.dart';
 import 'audio_handler.dart';
 import 'main.dart';
@@ -130,6 +131,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final text = t(context);
+
     if (!_checkedSavedLogin) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -172,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Connect to your Navidrome server',
+                          text.get('connectToServer'),
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.textMuted,
@@ -181,18 +184,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         AppTextField(
                           controller: _serverController,
-                          label: 'Server URL',
+                          label: text.get('serverUrl'),
                           hint: 'e.g. http://music.local:4533',
                         ),
                         const SizedBox(height: 14),
                         AppTextField(
                           controller: _usernameController,
-                          label: 'Username',
+                          label: text.get('username'),
                         ),
                         const SizedBox(height: 14),
                         AppTextField(
                           controller: _passwordController,
-                          label: 'Password',
+                          label: text.get('password'),
                           obscureText: true,
                         ),
                         const SizedBox(height: 10),
@@ -206,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           contentPadding: EdgeInsets.zero,
                           controlAffinity: ListTileControlAffinity.leading,
                           activeColor: AppColors.accent,
-                          title: const Text('Remember login info'),
+                          title: Text(text.get('rememberLogin')),
                         ),
                         if (_error != null) ...[
                           const SizedBox(height: 8),
@@ -232,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 20,
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
-                                : const Text('Connect'),
+                                : Text(text.get('connect')),
                           ),
                         ),
                       ],

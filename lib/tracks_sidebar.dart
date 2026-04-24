@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
+import 'app_language.dart';
 import 'app_theme.dart';
 
 enum LibrarySection {
@@ -8,7 +8,7 @@ enum LibrarySection {
   playlists,
 }
 
-class TracksOnlySidebar extends StatefulWidget {
+class TracksOnlySidebar extends StatelessWidget {
   const TracksOnlySidebar({
     super.key,
     required this.onClose,
@@ -22,31 +22,13 @@ class TracksOnlySidebar extends StatefulWidget {
   final LibrarySection selectedSection;
   final ValueChanged<LibrarySection> onSelectSection;
 
-  @override
-  State<TracksOnlySidebar> createState() => _TracksOnlySidebarState();
-}
-
-class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
-  String _appVersion = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    final info = await PackageInfo.fromPlatform();
-
-    if (!mounted) return;
-
-    setState(() {
-      _appVersion = info.version;
-    });
-  }
+  static const String appVersion = '04222026';
 
   @override
   Widget build(BuildContext context) {
+    final text = t(context);
+    final controller = AppLanguageScope.controllerOf(context);
+
     return Positioned.fill(
       child: Material(
         color: Colors.black.withAlpha(102),
@@ -66,7 +48,7 @@ class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
                     Row(
                       children: [
                         Text(
-                          'My Library',
+                          text.get('myLibrary'),
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
@@ -74,7 +56,7 @@ class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
                         ),
                         const Spacer(),
                         IconButton(
-                          onPressed: widget.onClose,
+                          onPressed: onClose,
                           icon: const Icon(Icons.close),
                         ),
                       ],
@@ -82,33 +64,67 @@ class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
                     const SizedBox(height: 16),
                     _SidebarItem(
                       icon: Icons.music_note_outlined,
-                      label: 'Tracks',
-                      selected: widget.selectedSection == LibrarySection.tracks,
-                      onTap: () => widget.onSelectSection(LibrarySection.tracks),
+                      label: text.get('tracks'),
+                      selected: selectedSection == LibrarySection.tracks,
+                      onTap: () => onSelectSection(LibrarySection.tracks),
                     ),
                     const SizedBox(height: 10),
                     _SidebarItem(
                       icon: Icons.queue_music_rounded,
-                      label: 'Playlists',
-                      selected: widget.selectedSection == LibrarySection.playlists,
-                      onTap: () => widget.onSelectSection(LibrarySection.playlists),
+                      label: text.get('playlists'),
+                      selected: selectedSection == LibrarySection.playlists,
+                      onTap: () => onSelectSection(LibrarySection.playlists),
                     ),
                     const Spacer(),
-                    if (_appVersion.isNotEmpty)
-                      Text(
-                        'Pulse $_appVersion',
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 13,
+                    Text(
+                      text.get('language'),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.panel,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: controller.code,
+                          isExpanded: true,
+                          dropdownColor: AppColors.panel,
+                          items: appLanguages.map((language) {
+                            return DropdownMenuItem(
+                              value: language.code,
+                              child: Text(language.name),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              controller.setLanguage(value);
+                            }
+                          },
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Pulse $appVersion',
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     const Divider(),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.logout),
-                      title: const Text('Logout'),
-                      onTap: widget.onLogout,
+                      title: Text(text.get('logout')),
+                      onTap: onLogout,
                     ),
                   ],
                 ),
@@ -116,7 +132,7 @@ class _TracksOnlySidebarState extends State<TracksOnlySidebar> {
             ),
             Expanded(
               child: GestureDetector(
-                onTap: widget.onClose,
+                onTap: onClose,
                 child: Container(color: Colors.transparent),
               ),
             ),

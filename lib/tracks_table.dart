@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'app_language.dart';
 import 'app_theme.dart';
 import 'navidrome_api.dart';
 import 'song.dart';
@@ -21,6 +22,8 @@ class TracksTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = t(context);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -34,11 +37,30 @@ class TracksTable extends StatelessWidget {
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                SizedBox(width: 36, child: Text('#', style: TextStyle(color: AppColors.textMuted))),
-                Expanded(flex: 8, child: Text('TITLE', style: TextStyle(color: AppColors.textMuted))),
-                SizedBox(width: 70, child: Text('TIME', style: TextStyle(color: AppColors.textMuted))),
+                const SizedBox(
+                  width: 36,
+                  child: Text(
+                    '#',
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
+                ),
+                Expanded(
+                  flex: 8,
+                  child: Text(
+                    text.get('title'),
+                    style: const TextStyle(color: AppColors.textMuted),
+                  ),
+                ),
+                SizedBox(
+                  width: 70,
+                  child: Text(
+                    text.get('time'),
+                    style: const TextStyle(color: AppColors.textMuted),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
           ),
@@ -49,6 +71,7 @@ class TracksTable extends StatelessWidget {
               itemBuilder: (context, index) {
                 final song = tracks[index];
                 final isCurrent = currentSong?.id == song.id;
+
                 return InkWell(
                   onTap: () => onPlaySong(song),
                   child: Container(
@@ -103,7 +126,9 @@ class TracksTable extends StatelessWidget {
                                       song.artist,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.textMuted),
+                                      style: const TextStyle(
+                                        color: AppColors.textMuted,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -116,7 +141,9 @@ class TracksTable extends StatelessWidget {
                           child: Text(
                             song.durationText,
                             textAlign: TextAlign.right,
-                            style: const TextStyle(color: AppColors.textMuted),
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                            ),
                           ),
                         ),
                       ],

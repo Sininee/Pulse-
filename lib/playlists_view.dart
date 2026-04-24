@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'app_language.dart';
 import 'app_theme.dart';
 import 'navidrome_api.dart';
 import 'playlist.dart';
@@ -35,13 +36,15 @@ class PlaylistsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (selectedPlaylist == null || playlistSongsFuture == null) {
-      return _buildPlaylistListOnly();
+      return _buildPlaylistListOnly(context);
     }
 
-    return _buildPlaylistDetailsOnly();
+    return _buildPlaylistDetailsOnly(context);
   }
 
-  Widget _buildPlaylistListOnly() {
+  Widget _buildPlaylistListOnly(BuildContext context) {
+    final text = t(context);
+
     if (playlists.isEmpty) {
       return Container(
         decoration: BoxDecoration(
@@ -49,10 +52,10 @@ class PlaylistsView extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'No playlists found.',
-            style: TextStyle(color: AppColors.textMuted),
+            text.get('noPlaylists'),
+            style: const TextStyle(color: AppColors.textMuted),
           ),
         ),
       );
@@ -97,12 +100,6 @@ class PlaylistsView extends StatelessWidget {
                             width: 54,
                             height: 54,
                             fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => Container(
-                              width: 54,
-                              height: 54,
-                              color: AppColors.panelAlt,
-                              child: const Icon(Icons.queue_music_rounded),
-                            ),
                           ),
                   ),
                   const SizedBox(width: 12),
@@ -118,7 +115,7 @@ class PlaylistsView extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${playlist.songCount} songs • ${playlist.durationText}',
+                          '${playlist.songCount} ${text.get('songs')} • ${playlist.durationText}',
                           style: const TextStyle(color: AppColors.textMuted),
                         ),
                         if (playlist.owner.isNotEmpty) ...[
@@ -131,11 +128,7 @@ class PlaylistsView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.textMuted,
-                  ),
+                  const Icon(Icons.chevron_right_rounded),
                 ],
               ),
             ),
@@ -145,34 +138,19 @@ class PlaylistsView extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaylistDetailsOnly() {
+  Widget _buildPlaylistDetailsOnly(BuildContext context) {
+    final text = t(context);
     final playlist = selectedPlaylist!;
 
     return FutureBuilder<List<Song>>(
       future: playlistSongsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Center(child: CircularProgressIndicator()),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Center(
-              child: Text('Error: ${snapshot.error}'),
-            ),
-          );
+          return Center(child: Text('${text.get('error')}: ${snapshot.error}'));
         }
 
         final allSongs = snapshot.data ?? [];
@@ -201,7 +179,6 @@ class PlaylistsView extends StatelessWidget {
                       onPressed: onBackToPlaylists,
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),
-                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         playlist.name,
@@ -213,11 +190,10 @@ class PlaylistsView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
                     FilledButton.icon(
                       onPressed: visibleSongs.isEmpty ? null : () => onPlayPlaylist(visibleSongs),
                       icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Play'),
+                      label: Text(text.get('play')),
                     ),
                   ],
                 ),
@@ -228,8 +204,8 @@ class PlaylistsView extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     query.isEmpty
-                        ? '${allSongs.length} songs'
-                        : '${visibleSongs.length} of ${allSongs.length} songs',
+                        ? '${allSongs.length} ${text.get('songs')}'
+                        : '${visibleSongs.length} of ${allSongs.length} ${text.get('songs')}',
                     style: const TextStyle(color: AppColors.textMuted),
                   ),
                 ),
@@ -242,29 +218,29 @@ class PlaylistsView extends StatelessWidget {
                     bottom: BorderSide(color: AppColors.border),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    SizedBox(
-                      width: 36,
-                      child: Text('#', style: TextStyle(color: AppColors.textMuted)),
-                    ),
+                    const SizedBox(width: 36, child: Text('#')),
                     Expanded(
                       flex: 8,
-                      child: Text('TITLE', style: TextStyle(color: AppColors.textMuted)),
+                      child: Text(text.get('title')),
                     ),
                     SizedBox(
                       width: 80,
-                      child: Text('TIME', style: TextStyle(color: AppColors.textMuted)),
+                      child: Text(
+                        text.get('time'),
+                        textAlign: TextAlign.right,
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: visibleSongs.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          'No songs match your search.',
-                          style: TextStyle(color: AppColors.textMuted),
+                          text.get('noSongsMatch'),
+                          style: const TextStyle(color: AppColors.textMuted),
                         ),
                       )
                     : ListView.separated(
@@ -281,40 +257,19 @@ class PlaylistsView extends StatelessWidget {
                               color: isCurrent ? Colors.white.withAlpha(8) : Colors.transparent,
                               child: Row(
                                 children: [
-                                  SizedBox(
-                                    width: 36,
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: TextStyle(
-                                        color: isCurrent ? AppColors.accent : AppColors.textMuted,
-                                      ),
-                                    ),
-                                  ),
+                                  SizedBox(width: 36, child: Text('${index + 1}')),
                                   Expanded(
                                     flex: 8,
                                     child: Row(
                                       children: [
                                         ClipRRect(
                                           borderRadius: BorderRadius.circular(8),
-                                          child: song.coverArtId.isEmpty
-                                              ? Container(
-                                                  width: 44,
-                                                  height: 44,
-                                                  color: AppColors.panel,
-                                                  child: const Icon(Icons.music_note, size: 18),
-                                                )
-                                              : CachedNetworkImage(
-                                                  imageUrl: api.coverArtUrl(song.coverArtId),
-                                                  width: 44,
-                                                  height: 44,
-                                                  fit: BoxFit.cover,
-                                                  errorWidget: (context, url, error) => Container(
-                                                    width: 44,
-                                                    height: 44,
-                                                    color: AppColors.panel,
-                                                    child: const Icon(Icons.music_note, size: 18),
-                                                  ),
-                                                ),
+                                          child: CachedNetworkImage(
+                                            imageUrl: api.coverArtUrl(song.coverArtId),
+                                            width: 44,
+                                            height: 44,
+                                            fit: BoxFit.cover,
+                                          ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -325,17 +280,14 @@ class PlaylistsView extends StatelessWidget {
                                                 song.title,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: isCurrent ? Colors.white : null,
-                                                ),
                                               ),
-                                              const SizedBox(height: 2),
                                               Text(
                                                 song.artist,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(color: AppColors.textMuted),
+                                                style: const TextStyle(
+                                                  color: AppColors.textMuted,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -348,7 +300,6 @@ class PlaylistsView extends StatelessWidget {
                                     child: Text(
                                       song.durationText,
                                       textAlign: TextAlign.right,
-                                      style: const TextStyle(color: AppColors.textMuted),
                                     ),
                                   ),
                                 ],

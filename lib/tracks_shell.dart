@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 
 import 'app_data_cleanup.dart';
+import 'app_language.dart';
 import 'app_theme.dart';
 import 'audio_handler.dart';
 import 'bottom_player_bar.dart';
@@ -131,7 +132,7 @@ class _TracksShellState extends State<TracksShell> {
         _playbackError = e.toString();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Playback failed: $e')),
+        SnackBar(content: Text('${t(context).get('playbackFailed')}: $e')),
       );
     }
   }
@@ -185,12 +186,14 @@ class _TracksShellState extends State<TracksShell> {
         _loggingOut = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout cleanup failed: $e')),
+        SnackBar(content: Text('${t(context).get('logoutCleanupFailed')}: $e')),
       );
     }
   }
 
   Widget _buildTracksSection() {
+    final text = t(context);
+
     return FutureBuilder<List<Song>>(
       future: _tracksFuture,
       builder: (context, snapshot) {
@@ -199,7 +202,7 @@ class _TracksShellState extends State<TracksShell> {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(child: Text('${text.get('error')}: ${snapshot.error}'));
         }
 
         final tracks = _visibleTracks(snapshot.data ?? []);
@@ -222,7 +225,7 @@ class _TracksShellState extends State<TracksShell> {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    'Tracks',
+                    text.get('tracks'),
                     style: Theme.of(context)
                         .textTheme
                         .headlineMedium
@@ -243,7 +246,7 @@ class _TracksShellState extends State<TracksShell> {
               if (_playbackError != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  'Playback error: $_playbackError',
+                  '${text.get('playbackError')}: $_playbackError',
                   style: const TextStyle(color: Colors.redAccent),
                 ),
               ],
@@ -264,6 +267,8 @@ class _TracksShellState extends State<TracksShell> {
   }
 
   Widget _buildPlaylistsSection() {
+    final text = t(context);
+
     return FutureBuilder<List<PlaylistSummary>>(
       future: _playlistsFuture,
       builder: (context, snapshot) {
@@ -272,7 +277,7 @@ class _TracksShellState extends State<TracksShell> {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(child: Text('${text.get('error')}: ${snapshot.error}'));
         }
 
         final playlists = _selectedPlaylist == null
@@ -306,7 +311,9 @@ class _TracksShellState extends State<TracksShell> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      _selectedPlaylist == null ? 'Playlists' : _selectedPlaylist!.name,
+                      _selectedPlaylist == null
+                          ? text.get('playlists')
+                          : _selectedPlaylist!.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context)
@@ -331,7 +338,7 @@ class _TracksShellState extends State<TracksShell> {
               if (_playbackError != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  'Playback error: $_playbackError',
+                  '${text.get('playbackError')}: $_playbackError',
                   style: const TextStyle(color: Colors.redAccent),
                 ),
               ],
@@ -374,11 +381,13 @@ class _TracksShellState extends State<TracksShell> {
 
   @override
   Widget build(BuildContext context) {
+    final text = t(context);
+
     final titleHint = _selectedSection == LibrarySection.tracks
-        ? 'Search tracks or artists...'
+        ? text.get('searchTracks')
         : _selectedPlaylist == null
-            ? 'Search playlists...'
-            : 'Search songs in playlist...';
+            ? text.get('searchPlaylists')
+            : text.get('searchPlaylistSongs');
 
     return Scaffold(
       resizeToAvoidBottomInset: false,

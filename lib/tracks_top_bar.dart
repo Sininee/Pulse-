@@ -7,7 +7,7 @@ class TracksTopBar extends StatelessWidget {
     super.key,
     required this.onSearchChanged,
     required this.onMenuPressed,
-    this.hintText = 'Search tracks or artists...',
+    this.hintText = '',
   });
 
   final ValueChanged<String> onSearchChanged;
