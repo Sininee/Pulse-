@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'app_language.dart';
 import 'app_theme.dart';
+import 'app_version.dart';
 
 enum LibrarySection {
   tracks,
+  albums,
   playlists,
 }
 
@@ -21,8 +23,6 @@ class TracksOnlySidebar extends StatelessWidget {
   final VoidCallback onLogout;
   final LibrarySection selectedSection;
   final ValueChanged<LibrarySection> onSelectSection;
-
-  static const String appVersion = '04222026';
 
   @override
   Widget build(BuildContext context) {
@@ -62,20 +62,34 @@ class TracksOnlySidebar extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
+
                     _SidebarItem(
                       icon: Icons.music_note_outlined,
                       label: text.get('tracks'),
                       selected: selectedSection == LibrarySection.tracks,
                       onTap: () => onSelectSection(LibrarySection.tracks),
                     ),
+
                     const SizedBox(height: 10),
+
+                    _SidebarItem(
+                      icon: Icons.album_rounded,
+                      label: text.get('albums'),
+                      selected: selectedSection == LibrarySection.albums,
+                      onTap: () => onSelectSection(LibrarySection.albums),
+                    ),
+
+                    const SizedBox(height: 10),
+
                     _SidebarItem(
                       icon: Icons.queue_music_rounded,
                       label: text.get('playlists'),
                       selected: selectedSection == LibrarySection.playlists,
                       onTap: () => onSelectSection(LibrarySection.playlists),
                     ),
+
                     const Spacer(),
+
                     Text(
                       text.get('language'),
                       style: const TextStyle(
@@ -110,16 +124,20 @@ class TracksOnlySidebar extends StatelessWidget {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     Text(
-                      'Pulse $appVersion',
+                      'Pulse ${AppVersion.version}',
                       style: const TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 13,
                       ),
                     ),
+
                     const SizedBox(height: 10),
                     const Divider(),
+
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.logout),

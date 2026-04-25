@@ -5,6 +5,7 @@ import 'app_language.dart';
 import 'app_theme.dart';
 import 'audio_handler.dart';
 import 'login_screen.dart';
+import 'app_version.dart';
 
 late final AudioHandler audioHandler;
 late final AppLanguageController languageController;
@@ -15,6 +16,8 @@ Future<void> main() async {
   languageController = AppLanguageController();
   await languageController.load();
 
+  await AppVersion.load();
+
   audioHandler = await AudioService.init(
     builder: () => PulseAudioHandler(),
     config: const AudioServiceConfig(
@@ -23,7 +26,6 @@ Future<void> main() async {
       androidNotificationOngoing: true,
     ),
   );
-
   runApp(const MyApp());
 }
 

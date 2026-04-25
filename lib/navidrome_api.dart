@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'album.dart';
 import 'playlist.dart';
 import 'song.dart';
 
@@ -71,15 +72,12 @@ class NavidromeApi {
 
   Future<List<Song>> getTracks() async {
     final response = await http.get(
-      _buildJsonUri(
-        'search3.view',
-        {
-          'query': '',
-          'songCount': '200',
-          'albumCount': '0',
-          'artistCount': '0',
-        },
-      ),
+      _buildJsonUri('search3.view', {
+        'query': '',
+        'songCount': '200',
+        'albumCount': '0',
+        'artistCount': '0',
+      }),
     );
 
     if (response.statusCode != 200) {
@@ -91,16 +89,54 @@ class NavidromeApi {
     final result = root?['searchResult3'] as Map<String, dynamic>?;
     final rawSongs = result?['song'];
 
-    final List<dynamic> songs;
-    if (rawSongs is List) {
-      songs = rawSongs;
-    } else if (rawSongs is Map<String, dynamic>) {
-      songs = [rawSongs];
-    } else {
-      songs = [];
+    return _asList(rawSongs).map(_songFromMap).toList();
+  }
+
+  Future<List<AlbumSummary>> getAlbums() async {
+    final response = await http.get(
+      _buildJsonUri('getAlbumList2.view', {
+        'type': 'alphabeticalByName',
+        'size': '500',
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load albums (${response.statusCode})');
     }
 
-    return songs.map(_songFromMap).toList();
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final root = data['subsonic-response'] as Map<String, dynamic>?;
+    final albumList = root?['albumList2'] as Map<String, dynamic>?;
+    final rawAlbums = albumList?['album'];
+
+    return _asList(rawAlbums).map((item) {
+      final map = item as Map<String, dynamic>;
+      return AlbumSummary(
+        id: map['id']?.toString() ?? '',
+        name: map['name']?.toString() ?? map['title']?.toString() ?? 'Unknown Album',
+        artist: map['artist']?.toString() ?? 'Unknown Artist',
+        songCount: (map['songCount'] as num?)?.toInt() ?? 0,
+        durationSeconds: (map['duration'] as num?)?.toInt() ?? 0,
+        coverArtId: map['coverArt']?.toString() ?? '',
+      );
+    }).toList();
+  }
+
+  Future<List<Song>> getAlbumSongs(String albumId) async {
+    final response = await http.get(
+      _buildJsonUri('getAlbum.view', {'id': albumId}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load album (${response.statusCode})');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final root = data['subsonic-response'] as Map<String, dynamic>?;
+    final albumNode = root?['album'] as Map<String, dynamic>?;
+    final rawSongs = albumNode?['song'];
+
+    return _asList(rawSongs).map(_songFromMap).toList();
   }
 
   Future<List<PlaylistSummary>> getPlaylists() async {
@@ -115,16 +151,7 @@ class NavidromeApi {
     final playlistsNode = root?['playlists'] as Map<String, dynamic>?;
     final rawPlaylists = playlistsNode?['playlist'];
 
-    final List<dynamic> playlists;
-    if (rawPlaylists is List) {
-      playlists = rawPlaylists;
-    } else if (rawPlaylists is Map<String, dynamic>) {
-      playlists = [rawPlaylists];
-    } else {
-      playlists = [];
-    }
-
-    return playlists.map((item) {
+    return _asList(rawPlaylists).map((item) {
       final map = item as Map<String, dynamic>;
       return PlaylistSummary(
         id: map['id']?.toString() ?? '',
@@ -151,16 +178,13 @@ class NavidromeApi {
     final playlistNode = root?['playlist'] as Map<String, dynamic>?;
     final rawEntries = playlistNode?['entry'];
 
-    final List<dynamic> entries;
-    if (rawEntries is List) {
-      entries = rawEntries;
-    } else if (rawEntries is Map<String, dynamic>) {
-      entries = [rawEntries];
-    } else {
-      entries = [];
-    }
+    return _asList(rawEntries).map(_songFromMap).toList();
+  }
 
-    return entries.map(_songFromMap).toList();
+  List<dynamic> _asList(dynamic value) {
+    if (value is List) return value;
+    if (value is Map<String, dynamic>) return [value];
+    return [];
   }
 
   Song _songFromMap(dynamic song) {
