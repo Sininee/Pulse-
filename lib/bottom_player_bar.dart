@@ -56,48 +56,8 @@ class BottomPlayerBar extends StatelessWidget {
             children: [
               Expanded(
                 child: currentSong == null
-                    ? const SizedBox.shrink()
-                    : Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: api.coverArtUrl(currentSong!.coverArtId),
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Container(
-                                width: 48,
-                                height: 48,
-                                color: AppColors.panel,
-                                child: const Icon(Icons.music_note),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  currentSong!.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  currentSong!.artist,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: AppColors.textMuted),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    ? _buildTrackPlaceholder(coverSize: 48)
+                    : _buildTrackInfo(coverSize: 48),
               ),
               const SizedBox(width: 8),
               _buildVolumeControls(compact: true),
@@ -120,48 +80,8 @@ class BottomPlayerBar extends StatelessWidget {
           SizedBox(
             width: 260,
             child: currentSong == null
-                ? const SizedBox.shrink()
-                : Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: api.coverArtUrl(currentSong!.coverArtId),
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Container(
-                            width: 60,
-                            height: 60,
-                            color: AppColors.panel,
-                            child: const Icon(Icons.music_note),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              currentSong!.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              currentSong!.artist,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                ? _buildTrackPlaceholder(coverSize: 60)
+                : _buildTrackInfo(coverSize: 60),
           ),
           Expanded(
             child: Column(
@@ -185,6 +105,94 @@ class BottomPlayerBar extends StatelessWidget {
     );
   }
 
+  Widget _buildTrackInfo({required double coverSize}) {
+    final song = currentSong!;
+
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(coverSize >= 60 ? 12 : 10),
+          child: CachedNetworkImage(
+            imageUrl: api.coverArtUrl(song.coverArtId),
+            width: coverSize,
+            height: coverSize,
+            fit: BoxFit.cover,
+            errorWidget: (context, url, error) => Container(
+              width: coverSize,
+              height: coverSize,
+              color: AppColors.panel,
+              child: const Icon(Icons.music_note),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                song.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                song.artist,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+Widget _buildTrackPlaceholder({required double coverSize}) {
+  return Row(
+    children: [
+      Container(
+        width: coverSize,
+        height: coverSize,
+        decoration: BoxDecoration(
+          color: Colors.grey.withAlpha(55),
+          borderRadius: BorderRadius.circular(coverSize >= 60 ? 12 : 10),
+          border: Border.all(color: Colors.grey.withAlpha(35)),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 130,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.grey.withAlpha(55),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 86,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.grey.withAlpha(45),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
   Widget _buildTransportControls({required bool compact}) {
     return StreamBuilder<PlayerState>(
       stream: player.playerStateStream,
@@ -192,6 +200,7 @@ class BottomPlayerBar extends StatelessWidget {
         final playing = snapshot.data?.playing ?? false;
         final iconSize = compact ? 22.0 : 24.0;
         final mainButtonSize = compact ? 50.0 : 58.0;
+
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -222,13 +231,13 @@ class BottomPlayerBar extends StatelessWidget {
               child: Container(
                 width: mainButtonSize,
                 height: mainButtonSize,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: currentSong == null ? Colors.grey.withAlpha(40) : Colors.white,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: Colors.black,
+                  color: currentSong == null ? Colors.grey.withAlpha(130) : Colors.black,
                   size: compact ? 28 : 32,
                 ),
               ),
@@ -257,6 +266,7 @@ class BottomPlayerBar extends StatelessWidget {
       stream: player.durationStream,
       builder: (context, durationSnapshot) {
         final total = durationSnapshot.data ?? Duration.zero;
+
         return StreamBuilder<Duration>(
           stream: player.positionStream,
           builder: (context, positionSnapshot) {
@@ -310,13 +320,17 @@ class BottomPlayerBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.volume_up_rounded)),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.volume_up_rounded),
+          ),
           Expanded(
             child: StreamBuilder<double>(
               stream: player.volumeStream,
               initialData: player.volume,
               builder: (context, snapshot) {
                 final volume = snapshot.data ?? 1.0;
+
                 return Slider(
                   value: volume,
                   onChanged: player.setVolume,

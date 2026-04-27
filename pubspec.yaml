@@ -2,7 +2,7 @@ name: Pulse
 description: "A new Flutter project."
 
 publish_to: 'none'
-version: 04252026.0.0
+version: 04272026.0.0
 
 environment:
   sdk: ^3.10.1

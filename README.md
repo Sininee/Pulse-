@@ -21,7 +21,7 @@ Pulse is a sleek Android music streaming app designed for smooth playback, beaut
 
 You can download the latest APK here:
 
-[Download Latest Release](https://github.com/Sininee/Pulse-/releases/tag/APK)
+[Download Latest Release](https://github.com/Sininee/Pulse-/releases/tag/04272026)
 
 ## 🚀 Installation
 

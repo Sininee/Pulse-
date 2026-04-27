@@ -258,14 +258,19 @@ class _TracksShellState extends State<TracksShell> {
               Row(
                 children: [
                   InkWell(
-                    borderRadius: BorderRadius.circular(27),
-                    onTap: tracks.isEmpty ? null : () => _playTrackSong(tracks.first),
-                    child: const Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 54,
-                      color: AppColors.accent,
-                    ),
+                  borderRadius: BorderRadius.circular(27),
+                  onTap: tracks.isEmpty
+                     ? null
+                  : () {
+                      final shuffled = List<Song>.from(tracks)..shuffle();
+                     _playTrackSong(shuffled.first);
+                      },
+                     child: const Icon(
+                    Icons.play_circle_fill_rounded,
+                    size: 54,
+                   color: AppColors.accent,
                   ),
+                ),
                   const SizedBox(width: 14),
                   Text(
                     text.get('tracks'),
