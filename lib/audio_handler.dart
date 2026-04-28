@@ -18,6 +18,7 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
   bool _repeatEnabled = false;
 
   StreamSubscription<PlayerState>? _playerStateSub;
+  StreamSubscription<PlaybackEvent>? _playbackEventSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<int?>? _currentIndexSub;
 
@@ -29,30 +30,31 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> _init() async {
     _playerStateSub = _player.playerStateStream.listen((state) async {
+      _syncMediaItemFromCurrentSource();
       _broadcastState();
 
       if (state.processingState == ProcessingState.completed) {
-        if (_repeatEnabled && _player.currentIndex != null) {
-          await _player.seek(Duration.zero, index: _player.currentIndex);
-          await _player.play();
-        } else {
+        if (!_repeatEnabled) {
           await skipToNext();
         }
       }
     });
 
+    _playbackEventSub = _player.playbackEventStream.listen((event) {
+      _syncMediaItemFromCurrentSource();
+      _broadcastState();
+    });
+
     _durationSub = _player.durationStream.listen((duration) {
       final current = mediaItem.value;
       if (current != null && duration != null) {
-        mediaItem.add(
-          current.copyWith(duration: duration),
-        );
+        mediaItem.add(current.copyWith(duration: duration));
       }
+      _broadcastState();
     });
 
     _currentIndexSub = _player.currentIndexStream.listen((index) {
-      if (index == null || index < 0 || index >= _queueSongs.length) return;
-      mediaItem.add(_mediaItemFromSong(_queueSongs[index]));
+      _syncMediaItemFromCurrentSource(fallbackIndex: index);
       _broadcastState();
     });
 
@@ -61,15 +63,37 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
   MediaItem _mediaItemFromSong(Song song) {
     final api = _api;
+
     return MediaItem(
       id: song.id,
       title: song.title,
       artist: song.artist,
       duration: Duration(seconds: song.durationSeconds),
-      artUri: (api != null && song.coverArtId.isNotEmpty)
+      artUri: api != null && song.coverArtId.isNotEmpty
           ? Uri.parse(api.coverArtUrl(song.coverArtId))
           : null,
     );
+  }
+
+  void _syncMediaItemFromCurrentSource({int? fallbackIndex}) {
+    final tag = _player.sequenceState?.currentSource?.tag;
+
+    if (tag is MediaItem) {
+      final current = mediaItem.value;
+      if (current?.id != tag.id) {
+        mediaItem.add(tag);
+      }
+      return;
+    }
+
+    final index = fallbackIndex ?? _player.currentIndex;
+    if (index != null && index >= 0 && index < _queueSongs.length) {
+      final fallbackItem = _mediaItemFromSong(_queueSongs[index]);
+      final current = mediaItem.value;
+      if (current?.id != fallbackItem.id) {
+        mediaItem.add(fallbackItem);
+      }
+    }
   }
 
   Future<void> setQueueSongs(List<Song> songs, {int startIndex = 0}) async {
@@ -88,17 +112,19 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
       return;
     }
 
+    final safeIndex = startIndex.clamp(0, _queueSongs.length - 1);
+
     final playlist = ConcatenatingAudioSource(
       useLazyPreparation: true,
       children: _queueSongs.map((song) {
+        final item = _mediaItemFromSong(song);
+
         return AudioSource.uri(
           Uri.parse(api.streamUrl(song.id)),
-          tag: _mediaItemFromSong(song),
+          tag: item,
         );
       }).toList(),
     );
-
-    final safeIndex = startIndex.clamp(0, _queueSongs.length - 1);
 
     await _player.setAudioSource(
       playlist,
@@ -107,16 +133,18 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
     );
 
     queue.add(_queueSongs.map(_mediaItemFromSong).toList());
-    mediaItem.add(_mediaItemFromSong(_queueSongs[safeIndex]));
+    _syncMediaItemFromCurrentSource(fallbackIndex: safeIndex);
     _broadcastState();
   }
 
   Future<void> playSongList(List<Song> songs, Song selectedSong) async {
     final index = songs.indexWhere((s) => s.id == selectedSong.id);
+
     await setQueueSongs(
       songs,
       startIndex: index >= 0 ? index : 0,
     );
+
     await play();
   }
 
@@ -128,6 +156,7 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> setShuffleEnabled(bool enabled) async {
     await _player.setShuffleModeEnabled(enabled);
+    _syncMediaItemFromCurrentSource();
     _broadcastState();
   }
 
@@ -136,12 +165,15 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> play() async {
+    _syncMediaItemFromCurrentSource();
     await _player.play();
+    _broadcastState();
   }
 
   @override
   Future<void> pause() async {
     await _player.pause();
+    _broadcastState();
   }
 
   @override
@@ -153,23 +185,23 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> seek(Duration position) async {
     await _player.seek(position);
+    _syncMediaItemFromCurrentSource();
+    _broadcastState();
   }
 
   @override
   Future<void> skipToNext() async {
     if (_queueSongs.isEmpty) return;
 
-    if (_player.shuffleModeEnabled) {
-      await _player.shuffle();
-    }
-
     if (_player.hasNext) {
       await _player.seekToNext();
-      await _player.play();
     } else {
       await _player.seek(Duration.zero, index: 0);
-      await _player.play();
     }
+
+    _syncMediaItemFromCurrentSource();
+    await _player.play();
+    _broadcastState();
   }
 
   @override
@@ -178,16 +210,20 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
     if (_player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
+      _syncMediaItemFromCurrentSource();
+      _broadcastState();
       return;
     }
 
     if (_player.hasPrevious) {
       await _player.seekToPrevious();
-      await _player.play();
     } else {
       await _player.seek(Duration.zero, index: _queueSongs.length - 1);
-      await _player.play();
     }
+
+    _syncMediaItemFromCurrentSource();
+    await _player.play();
+    _broadcastState();
   }
 
   void _broadcastState() {
@@ -225,6 +261,7 @@ class PulseAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> disposeHandler() async {
     await _playerStateSub?.cancel();
+    await _playbackEventSub?.cancel();
     await _durationSub?.cancel();
     await _currentIndexSub?.cancel();
     await _player.dispose();
